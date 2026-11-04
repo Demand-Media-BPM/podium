@@ -1,0 +1,19 @@
+{
+  "CORSRules": [
+    {
+      "ID": "browser-uploads-from-our-site",
+      "AllowedOrigins": ["https://tool.example.com"],
+      "AllowedMethods": ["POST"],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3000
+    },
+    {
+      "ID": "video-playback-from-our-site",
+      "AllowedOrigins": ["https://tool.example.com"],
+      "AllowedMethods": ["GET", "HEAD"],
+      "AllowedHeaders": ["*"],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}

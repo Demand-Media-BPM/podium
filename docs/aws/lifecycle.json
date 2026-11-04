@@ -1,0 +1,18 @@
+{
+  "Rules": [
+    {
+      "ID": "expire-submitted-videos-after-180-days",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "responses/" },
+      "Expiration": { "Days": 180 },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+    },
+    {
+      "ID": "expire-unfinished-uploads-after-1-day",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "pending/" },
+      "Expiration": { "Days": 1 },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+    }
+  ]
+}

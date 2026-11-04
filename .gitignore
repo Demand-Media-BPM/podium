@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Environment files (keep the examples)
+.env
+.env.*
+!.env.example
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local development video uploads (Phase 4) - never commit recordings
+backend/storage/
+**/storage/uploads/
+
+# Generated verification output
+*-results.txt
+frontend/test-artifacts/
