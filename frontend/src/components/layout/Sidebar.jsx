@@ -6,7 +6,6 @@ import ListAltRoundedIcon from '@mui/icons-material/ListAltRounded';
 import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import BrandMark from '../ui/BrandMark.jsx';
-import BackendStatus from '../BackendStatus.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { getInitials } from '../../utils/people.js';
 import { tokens } from '../../tokens.js';
@@ -103,9 +102,6 @@ export default function Sidebar({ pathname, onNavigate }) {
         >
           {loggingOut ? 'Signing out...' : 'Log out'}
         </Button>
-        <Box sx={{ px: 1.5, pb: 0.5 }}>
-          <BackendStatus />
-        </Box>
       </Box>
     </Box>
   );

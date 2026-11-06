@@ -5,5 +5,5 @@ export default {
   "primary": "#083A52",
   "secondary": "#2EC4B6",
   "logo": "/logos/healthtech-pulse.png",
-  "logoBackground": "#FFFFFF"
+  "logoBackground": "transparent"
 };

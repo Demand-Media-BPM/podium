@@ -5,5 +5,5 @@ export default {
   "primary": "#006642",
   "secondary": "#FF9F1C",
   "logo": "/logos/fintech-pulse.png",
-  "logoBackground": "#FFFFFF"
+  "logoBackground": "transparent"
 };

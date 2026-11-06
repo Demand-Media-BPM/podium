@@ -35,7 +35,7 @@ POST /api/public/:token/submissions receives {batchId, batchToken, answers: [res
 - All answers belong to that request and batch and match the batch credential, client details and consent.
 - No answer has expired and the total reported duration is at most 3,540 seconds.
 
-An immutable Submission record publishes the selected response IDs together. Before it exists, videos are excluded from employee lists, counts, playback and download. Extra attempts not selected for the final submission stay hidden. Counts on request/dashboard pages count complete questionnaires, while the response list paginates individual question videos. Original single-question records retain their legacy flow.
+An immutable Submission record publishes the selected response IDs together. Before it exists, videos are excluded from employee lists, counts, playback and download. Extra attempts not selected for the final submission stay hidden. Counts on request/dashboard pages count complete questionnaires, and the response list paginates complete submissions (five per UI page), keeping all question videos together. Original single-question records retain their legacy flow.
 
 Duration remains browser-reported, as in the original app; container signature validation does not decode or independently time videos. The existing 180-day video retention and private S3 settings remain in effect.
 
@@ -55,3 +55,9 @@ Run npm install in backend and frontend after pulling these changes. Start each 
 - Browser workflow with simulated camera/API: npm run test:browser (requires Playwright Chromium, installed with npx playwright install chromium if missing)
 
 The browser script starts and stops its own Vite server on port 5188 and writes screenshots to frontend/test-artifacts/. It checks the create form, all themes, required questions, actual browser recording with fake devices, time refunds, retry behavior and mobile overflow. It does not replace testing real phones, Safari, or real AWS.
+
+## Grouped employee response view
+
+Each completed submission has a numbered Response heading, client details, submitted date and its own ZIP button. Its videos appear underneath in the original stored question order, with a divider before the next submission. Responses appear in ascending order: Response 1 first, then Response 2, Response 3, and so on across pages. New submissions are appended and do not renumber earlier submissions. Older single-video responses appear as individual groups without a ZIP button. Expired or unavailable answers disable the group ZIP button.
+
+GET /api/requests/:id/responses now returns submissions with nested responses and pagination totals measured in submissions. The flat responses array remains for existing consumers and contains all videos in the selected groups. No stored documents need to be migrated.

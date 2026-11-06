@@ -124,7 +124,13 @@ export default function QuestionnaireJourney({token, request}) {
       </AccordionSummary>
       <AccordionDetails id={'answer-'+q.id} sx={{p:{xs:2,sm:3},borderTop:1,borderColor:'divider'}}>
         {expanded===q.id && <Box sx={{display:'grid',gap:3,gridTemplateColumns:{xs:'1fr',md:'2fr 3fr'}}}>
-          <Box><Typography variant="overline">Question {index+1}</Typography><Typography variant="h6" sx={{whiteSpace:'pre-wrap',overflowWrap:'anywhere',mb:2}}>{q.text}</Typography><Typography color="text.secondary">Find a quiet place and face the light. Your video is uploaded when you submit all answers.</Typography></Box>
+          <Box><Typography variant="overline">Question {index+1}</Typography><Typography variant="h6" sx={{whiteSpace:'pre-wrap',overflowWrap:'anywhere',mb:2}}>{q.text}</Typography><Typography variant="subtitle2" sx={{mb:1}}>Tips for a Good Recording</Typography>
+            <Box component="ol" sx={{m:0,pl:2.5,color:'text.secondary','& > li':{mb:1.5}}}>
+              <Typography component="li" variant="body2">Choose a quiet spot with the light in front of you, not behind you.</Typography>
+              <Typography component="li" variant="body2">Look at the camera, not at the question on the screen.</Typography>
+              <Typography component="li" variant="body2">Use real examples from your own work wherever possible.</Typography>
+              <Typography component="li" variant="body2">Don't worry about getting it perfect on the first attempt. You can retake any answer you are not happy with.</Typography>
+            </Box></Box>
           <Box sx={{minWidth:0,pointerEvents:details?'auto':'none',opacity:details?1:0.5}}>
             {answers[q.id] ? <RecordingReview {...answers[q.id]} onRerecord={()=>retake(q.id)} onContinue={()=>{const next=questions.find(item=>!answers[item.id]);if(next)switchQuestion(next.id,true);else setExpanded(false);}} /> : remaining<=0 && status!=='recording' ? <Alert severity="warning">No recording time remains. Re-record another answer with a shorter video to free time for this question.</Alert> : <VideoRecorder controller={controller} />}
           </Box>

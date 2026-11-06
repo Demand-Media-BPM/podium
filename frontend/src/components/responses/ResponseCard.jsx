@@ -11,7 +11,7 @@ import { tokens } from '../../tokens.js';
 
 // One client response. Names and emails come from clients (untrusted): React renders them as escaped text.
 // `effectiveStatus` becomes "expired" the moment the retention deadline passes, before the cleanup job runs.
-export default function ResponseCard({ response, onPlay, onDownload, downloading, index = 0 }) {
+export default function ResponseCard({ response, onPlay, onDownload, downloading, index = 0, questionNumber }) {
   const status = response.effectiveStatus || response.status;
   const available = canAccessVideo(response);
   const expired = status === 'expired';
@@ -31,6 +31,7 @@ export default function ResponseCard({ response, onPlay, onDownload, downloading
         opacity: expired ? 0.85 : 1,
       }}
     >
+      {questionNumber && <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1 }}>Question {questionNumber}</Typography>}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, alignItems: { md: 'center' }, justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', gap: 1.75, alignItems: 'center', minWidth: 0 }}>
           <Avatar sx={{ bgcolor: 'primary.light', color: 'primary.main', fontWeight: 700, width: 44, height: 44 }}>{getInitials(response.clientName)}</Avatar>

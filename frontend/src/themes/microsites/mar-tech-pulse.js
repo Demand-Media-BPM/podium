@@ -5,5 +5,5 @@ export default {
   "primary": "#F7C51E",
   "secondary": "#8D52FE",
   "logo": "/logos/martech-pulse.png",
-  "logoBackground": "#171810"
+  "logoBackground": "transparent"
 };

@@ -8,7 +8,7 @@ export const MAX_DURATION_SECONDS = 3540;
 export const MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024; // 2 GiB
 export const NAME_MAX = 100;
 export const EMAIL_MAX = 254;
-export const CONSENT_TEXT = 'I consent to the recording, storage, and internal use of my video response.';
+export const CONSENT_TEXT = 'I agree to have my video recorded and shared publicly for promotional purposes.';
 // How long videos are kept (S3 lifecycle rule + the app's own deadline). Shown to clients and employees.
 export const RETENTION_DAYS = 180;
 export const APP_NAME = 'PODIUM';

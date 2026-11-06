@@ -11,17 +11,18 @@ const contrast = color => getContrastRatio(color, '#FFFFFF') >= 4.5 ? '#FFFFFF' 
 export function createMicrositeTheme(id) {
   const site = getMicrosite(id);
   if (!site) return base;
-  const accent = getContrastRatio(site.primary, '#FFFFFF') >= 3 ? site.primary : site.secondary;
+  const primary = site.actionPrimary || site.primary;
+  const accent = getContrastRatio(primary, '#FFFFFF') >= 3 ? primary : site.secondary;
   return createTheme(base, {
     palette: {
-      primary: {main: site.primary, light: alpha(site.secondary, 0.14), contrastText: contrast(site.primary)},
+      primary: {main: primary, light: alpha(site.secondary, 0.14), contrastText: contrast(primary), ...(site.actionHover ? {dark: site.actionHover} : {})},
       secondary: {main: site.secondary, contrastText: contrast(site.secondary)},
       info: {main: accent,light: alpha(site.secondary,0.12)},
       action: {selected: alpha(site.secondary,0.12),hover: alpha(site.secondary,0.06)},
       background: {default: alpha(site.secondary, 0.05), paper: '#FFFFFF'},
     },
     components: {
-      MuiButton: {styleOverrides: {containedPrimary: {'&:hover': {backgroundColor: site.primary, filter: 'brightness(0.92)'}}, textPrimary: {color: accent}, outlinedPrimary: {color: accent, borderColor: accent}}},
+      MuiButton: {styleOverrides: {containedPrimary: {'&:hover': {backgroundColor: site.actionHover || primary, filter: site.actionHover ? 'none' : 'brightness(0.92)'}}, textPrimary: {color: accent}, outlinedPrimary: {color: accent, borderColor: accent}}},
       MuiOutlinedInput: {styleOverrides: {root: {'&.Mui-focused .MuiOutlinedInput-notchedOutline': {borderColor: accent}}}},
       MuiInputLabel: {styleOverrides: {root: {'&.Mui-focused': {color: accent}}}},
       MuiButtonBase: {styleOverrides: {root: {'&.Mui-focusVisible': {outline: '2px solid ' + accent}}}},
