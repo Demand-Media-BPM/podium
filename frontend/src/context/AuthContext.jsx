@@ -53,6 +53,12 @@ export function AuthProvider({ children }) {
     setAuth({ status: 'unauthenticated', user: null, endReason: 'logout' });
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    const user = await getCurrentUser();
+    setAuth(current => current.status === 'authenticated' ? {...current,user} : current);
+    return user;
+  }, []);
+
   const value = useMemo(
     () => ({
       user: auth.user,
@@ -62,8 +68,9 @@ export function AuthProvider({ children }) {
       isLoading: auth.status === 'loading',
       login,
       logout,
+      refreshUser,
     }),
-    [auth, login, logout]
+    [auth, login, logout, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

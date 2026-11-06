@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Outlet, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import AdminRoute from './components/AdminRoute.jsx';
 import RootRedirect from './components/RootRedirect.jsx';
 import FullPageLoader from './components/ui/FullPageLoader.jsx';
 import AppLayout from './layouts/AppLayout.jsx';
@@ -11,6 +12,7 @@ import ClientResponsePage from './pages/ClientResponsePage.jsx';
 import ThankYouPage from './pages/ThankYouPage.jsx';
 
 // Employee pages are loaded on demand, so a client opening a response link never downloads them.
+const ManageUsersPage = lazy(() => import('./pages/ManageUsersPage.jsx'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'));
 const MyRequestsPage = lazy(() => import('./pages/MyRequestsPage.jsx'));
 const CreateRequestPage = lazy(() => import('./pages/CreateRequestPage.jsx'));
@@ -45,6 +47,7 @@ function App() {
           {/* Employee area (sidebar layout). The route guard is for UX; the backend enforces access. */}
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
+              <Route element={<AdminRoute />}><Route path="/users" element={<ManageUsersPage />} /></Route>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/requests" element={<MyRequestsPage />} />
               <Route path="/requests/new" element={<CreateRequestPage />} />

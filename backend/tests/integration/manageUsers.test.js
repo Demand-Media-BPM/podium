@@ -1,0 +1,61 @@
+require('../helpers/setupEnv');
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const {hasMongo, startTestServer, loginAs, createClient} = require('../helpers/testServer');
+const {User, Request} = require('../../models');
+
+test('admin user management: access control, safe data, creation, edits and account status', {skip: !hasMongo}, async t => {
+  const server = await startTestServer({loginRateLimit:{limit:1000}});t.after(server.stop);
+  const admins = [];
+  for(let i=1;i<=3;i++) admins.push(await loginAs(server.baseUrl,{name:'Existing admin '+i,email:'admin'+i+'@example.com',role:'admin'}));
+  const admin = admins[0], employee = await loginAs(server.baseUrl,{email:'employee@example.com'}), anon = createClient(server.baseUrl);
+  const password = 'valid-user-password-123';
+  const payload = {name:'New User',email:'new@example.com',password,role:'employee'};
+  for(const client of [employee.client,anon]) {
+    const expected = client === anon ? 401 : 403;
+    assert.equal((await client.get('/api/users')).status,expected);
+    assert.equal((await client.post('/api/users',payload)).status,expected);
+    assert.equal((await client.patch('/api/users/'+admin.user.id,{name:'Changed'})).status,expected);
+  }
+  const listed = await admin.client.get('/api/users');assert.equal(listed.status,200);assert.equal(listed.json.pagination.total,4);
+  assert.match(listed.headers.get('cache-control'),/no-store/);
+  assert.ok(!listed.text.includes('passwordHash'));assert.ok(!listed.text.includes('password'));
+  assert.equal((await admin.client.post('/api/users',{...payload,password:'short'})).status,400);
+  assert.equal((await admin.client.post('/api/users',{...payload,isActive:false})).status,400);
+  assert.equal((await admin.client.post('/api/users',{...payload,role:'owner'})).status,400);
+  const created = await admin.client.post('/api/users',payload);assert.equal(created.status,201,created.text);
+  const id = created.json.user.id;assert.equal(created.json.user.role,'employee');assert.equal(created.json.user.isActive,true);
+  assert.ok(!created.text.includes(password));assert.ok(!created.text.includes('passwordHash'));
+  const stored = await User.findById(id).select('+passwordHash');assert.match(stored.passwordHash,/^\$argon2id\$/);assert.notEqual(stored.passwordHash,password);
+  assert.equal((await admin.client.post('/api/users',{...payload,email:'NEW@EXAMPLE.COM'})).status,409);
+  assert.equal((await admin.client.patch('/api/users/'+id,{email:'ADMIN1@EXAMPLE.COM'})).status,409);
+  assert.equal((await admin.client.patch('/api/users/'+id,{passwordHash:'bad'})).status,400);
+  assert.equal((await admin.client.patch('/api/users/'+id,{isActive:'false'})).status,400);
+  assert.equal((await admin.client.patch('/api/users/'+id,{})).status,400);
+  assert.equal((await admin.client.patch('/api/users/not-an-id',{name:'Test'})).status,400);
+  assert.equal((await admin.client.patch('/api/users/000000000000000000000000',{name:'Test'})).status,404);
+  assert.equal((await admin.client.patch('/api/users/'+admin.user.id,{role:'employee'})).status,409);
+  assert.equal((await admin.client.patch('/api/users/'+admin.user.id,{isActive:false})).status,409);
+  const target = createClient(server.baseUrl);
+  assert.equal((await target.post('/api/auth/login',{email:payload.email,password})).status,200);
+  const own = await target.post('/api/requests',{title:'My request',question:'My question?'});assert.equal(own.status,201);
+  await admin.client.post('/api/requests',{title:'Admin request',question:'Admin question?'});
+  assert.equal((await target.get('/api/requests')).json.pagination.total,1,'users see only their own requests');
+  assert.equal((await target.get('/api/users')).status,403);
+  const promoted = await admin.client.patch('/api/users/'+id,{role:'admin',name:'Updated User'});assert.equal(promoted.status,200);
+  assert.equal((await target.get('/api/users')).status,200,'role change applies to existing sessions');
+  assert.equal((await target.get('/api/requests')).json.pagination.total,2,'admins see all requests');
+  await admin.client.patch('/api/users/'+id,{role:'employee'});
+  assert.equal((await target.get('/api/users')).status,403);
+  assert.equal((await target.get('/api/requests')).json.pagination.total,1);
+  assert.equal((await admin.client.patch('/api/users/'+id,{isActive:false})).status,200);
+  assert.equal((await target.get('/api/requests')).status,401,'deactivation blocks an existing session');
+  assert.equal((await target.post('/api/auth/login',{email:payload.email,password})).status,401);
+  assert.ok(await Request.exists({_id:own.json.request.id}),'deactivation keeps owned data');
+  await admin.client.patch('/api/users/'+id,{isActive:true,email:'updated@example.com'});
+  assert.equal((await target.post('/api/auth/login',{email:'updated@example.com',password})).status,200);
+  const self = await admin.client.patch('/api/users/'+admin.user.id,{name:'Updated Admin',email:'updated-admin@example.com'});assert.equal(self.status,200);
+  assert.equal((await admin.client.get('/api/auth/me')).json.user.name,'Updated Admin');
+  const page2 = await admin.client.get('/api/users?limit=2&page=2');assert.equal(page2.json.users.length,2);assert.equal(page2.json.pagination.total,5);
+  for(const original of admins) {const doc=await User.findById(original.user.id);assert.equal(doc.role,'admin');assert.equal(doc.isActive,true);}
+});

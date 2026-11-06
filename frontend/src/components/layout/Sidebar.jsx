@@ -4,6 +4,7 @@ import { Avatar, Box, Button, CircularProgress, List, ListItemButton, ListItemIc
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import ListAltRoundedIcon from '@mui/icons-material/ListAltRounded';
 import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded';
+import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import BrandMark from '../ui/BrandMark.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -16,6 +17,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard', to: '/dashboard', icon: <DashboardRoundedIcon /> },
   { label: 'My Requests', to: '/requests', icon: <ListAltRoundedIcon /> },
   { label: 'Create Request', to: '/requests/new', icon: <AddCircleRoundedIcon /> },
+  { label: 'Manage Users', to: '/users', icon: <PeopleRoundedIcon />, adminOnly: true },
 ];
 
 // "My Requests" must not stay highlighted on /requests/new, and /requests/:id still counts as My Requests.
@@ -50,7 +52,7 @@ export default function Sidebar({ pathname, onNavigate }) {
           Menu
         </Typography>
         <List disablePadding sx={{ display: 'grid', gap: 0.5 }}>
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter(item => !item.adminOnly || isAdmin).map((item) => {
             const active = isActive(item, pathname);
             return (
               <ListItemButton
@@ -88,7 +90,7 @@ export default function Sidebar({ pathname, onNavigate }) {
                 {user.name}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap display="block">
-                {isAdmin ? 'Administrator' : 'Employee'}
+                {isAdmin ? 'Administrator' : 'User'}
               </Typography>
             </Box>
           </Box>

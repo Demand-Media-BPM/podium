@@ -201,7 +201,7 @@ cd backend
 npm run create-admin
 ```
 
-It prompts for name, email and password (the password is not echoed, must be 12-128 characters, and must be typed twice). The password and hash are never printed. A duplicate email is rejected. An authenticated admin-only "create employee" feature is planned for a later phase.
+It prompts for name, email and password (the password is not echoed, must be 12-128 characters, and must be typed twice). The password and hash are never printed. A duplicate email is rejected. Admins can also create and update accounts from the Manage Users sidebar tab. See [user management](docs/user-management.md).
 
 ## How authentication works
 
@@ -374,4 +374,4 @@ does **not** replace the manual checklist above: real cameras, phones and Safari
 ## Planned for later phases
 
 - **Phase 6 (suggested):** hardening and production readiness (security headers, request logging, backups of MongoDB, monitoring and alerts)
-- **Phase 7 (suggested):** admin-only employee management, deployment on AWS EC2 behind HTTPS
+- **Phase 7 (suggested):** deployment on AWS EC2 behind HTTPS
