@@ -1,10 +1,10 @@
 {
   "Rules": [
     {
-      "ID": "expire-submitted-videos-after-180-days",
+      "ID": "expire-submitted-videos-after-60-days",
       "Status": "Enabled",
       "Filter": { "Prefix": "responses/" },
-      "Expiration": { "Days": 180 },
+      "Expiration": { "Days": 60 },
       "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
     },
     {

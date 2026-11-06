@@ -2,7 +2,7 @@
 //   npm run retention
 //
 // What it does (the same pass the server runs every 6 hours):
-//   - marks submitted responses past their 180-day deadline as 'expired' and deletes their S3 object,
+//   - marks submitted responses past their 60-day deadline as 'expired' and deletes their S3 object,
 //   - marks pending uploads that were never completed as 'failed'.
 // It never deletes database records. It is safe to run at any time and as often as you like. Use it from a scheduler
 // (cron / systemd timer) if you start the server with RETENTION_JOB=off.

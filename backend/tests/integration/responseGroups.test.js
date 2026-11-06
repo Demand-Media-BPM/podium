@@ -14,7 +14,7 @@ test('response groups paginate as complete submissions with stable numbers and o
   });
   assert.equal(created.status, 201, created.text);
   const requestId = created.json.request.id;
-  const base = {requestId, clientName:'Same client', clientEmail:'client@example.com', status:'submitted', consentAccepted:true, storageProvider:'local', durationSeconds:1, deleteAt:new Date(Date.now()+86400000)};
+  const base = {requestId, clientName:'Same client', clientEmail:'client@example.com', status:'submitted', consentAccepted:true, storageProvider:'local', retentionDays:60, durationSeconds:1, deleteAt:new Date(Date.now()+86400000)};
   const legacy = await Response.create({...base, submittedAt:new Date('2026-01-01')});
   const makeGroup = async (day, expired = false) => {
     const batchId = crypto.randomUUID();

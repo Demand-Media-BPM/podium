@@ -17,7 +17,7 @@ test('submit error messages cover the S3 cases', () => {
 test('video access errors: expired and missing are final, others can be retried', () => {
   const expired = describeVideoAccessError(httpError(410, 'VIDEO_EXPIRED'));
   assert.equal(expired.code, 'VIDEO_EXPIRED');
-  assert.match(expired.message, /180-day/);
+  assert.match(expired.message, /60-day/);
   assert.match(describeVideoAccessError(httpError(410, 'VIDEO_MISSING')).message, /no longer available/);
   assert.match(describeVideoAccessError(httpError(404)).message, /not be found|access/i);
   assert.match(describeVideoAccessError(httpError(502, 'STORAGE_UNAVAILABLE')).message, /temporarily unavailable/);

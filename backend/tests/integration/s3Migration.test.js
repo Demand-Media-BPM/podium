@@ -50,7 +50,7 @@ test('migrating Phase 4 local test recordings to S3 (integration, fake S3)', { s
     assert.ok(fs.existsSync(videoStore.resolveKey(good.key)), 'the local file is kept');
     const object = ctx.s3.objects.get(doc.videoKey);
     assert.equal(object.encryption, 'AES256');
-    assert.equal(doc.deleteAt.getTime(), Math.floor(object.lastModified.getTime() / 1000) * 1000 + 180 * 86400000, 'fresh 180 days');
+    assert.equal(doc.deleteAt.getTime(), Math.floor(object.lastModified.getTime() / 1000) * 1000 + 60 * 86400000, 'fresh 60 days');
   });
 
   await t.test('the migrated video can now be played through a signed URL', async () => {

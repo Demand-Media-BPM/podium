@@ -68,7 +68,7 @@ test('upload directory defaults outside the frontend and can be overridden', () 
   const config = buildConfig(validEnv);
   assert.ok(config.upload.dir.endsWith(['backend', 'storage', 'uploads'].join(require('path').sep)));
   assert.equal(config.upload.maxBytes, 2 * 1024 * 1024 * 1024);
-  assert.equal(config.upload.retentionDays, 180);
+  assert.equal(config.upload.retentionDays, 60);
   assert.deepEqual(findConfigProblems(config), []);
 });
 
@@ -127,7 +127,7 @@ test('S3 timings and prefixes match the documented policy', () => {
   assert.equal(s3.downloadExpiresSeconds, 60);
   assert.equal(s3.pendingPrefix, 'pending/');
   assert.equal(s3.finalPrefix, 'responses/');
-  assert.equal(upload.retentionDays, 180);
+  assert.equal(upload.retentionDays, 60);
   assert.equal(retention.jobEnabled, true);
   assert.equal(buildConfig({ ...s3Env, RETENTION_JOB: 'off' }).retention.jobEnabled, false);
 });

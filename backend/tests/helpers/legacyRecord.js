@@ -25,7 +25,7 @@ async function legacyRecord(requestId, bytes) {
     consentAccepted: true,
     status: 'submitted',
     submittedAt: new Date(),
-    deleteAt: new Date(Date.now() + 100 * 86400000),
+    deleteAt: new Date(Date.now() + 180 * 86400000),
     createdAt: new Date(),
     updatedAt: new Date(),
   });

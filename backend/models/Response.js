@@ -48,11 +48,13 @@ const responseSchema = new mongoose.Schema(
       default: 'pending_upload',
     },
     submittedAt: { type: Date },
-    // Retention deadline: the S3 object's creation time + 180 days, set exactly once when the upload is verified
+    // Retention deadline: the S3 object's creation time + 60 days, set exactly once when the upload is verified
     // (never updated afterwards: the update that sets it only matches records that do not have it yet).
     // The app refuses playback/download from this moment on, whether or not S3 has physically deleted the object.
     // It is a plain date, intentionally NOT a TTL index: the record is kept as minimal submission history.
     deleteAt: { type: Date },
+    // No default: unmarked existing records used the legacy 180-day policy.
+    retentionDays: { type: Number, min: 1 },
     expiredAt: { type: Date }, // when the retention job marked the record expired
     failureReason: { type: String, trim: true, maxlength: 60 }, // short code, e.g. unsupported_video, abandoned
   },

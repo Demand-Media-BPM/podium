@@ -40,10 +40,10 @@ test('public response submission: success paths (integration)', { skip }, async 
     assert.deepEqual(tempFiles(), [], 'no temp file is left behind');
   });
 
-  await t.test('deleteAt is 180 days after submission and there is no automatic deletion', async () => {
+  await t.test('deleteAt is 60 days after submission and there is no automatic deletion', async () => {
     const doc = await Response.findOne({}).lean();
     const days = (doc.deleteAt - doc.submittedAt) / DAY_MS;
-    assert.ok(Math.abs(days - 180) < 0.001, `deleteAt is ${days} days after submittedAt`);
+    assert.ok(Math.abs(days - 60) < 0.001, `deleteAt is ${days} days after submittedAt`);
     const indexes = await Response.collection.indexes();
     assert.ok(!indexes.some((index) => index.expireAfterSeconds !== undefined), 'no TTL index');
   });

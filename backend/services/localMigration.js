@@ -52,7 +52,7 @@ async function migrateOne(item, s3) {
   const deleteAt = new Date(info.lastModified.getTime() + config.upload.retentionDays * DAY_MS);
   const result = await Response.updateOne(
     { _id: doc._id, status: 'submitted', videoKey: doc.videoKey }, // unchanged since it was listed
-    { $set: { storageProvider: 's3', videoKey: key, mimeType: detected.mimeType, fileSize: size, deleteAt, migratedFromLocalKey: doc.videoKey } }
+    { $set: { storageProvider: 's3', videoKey: key, mimeType: detected.mimeType, fileSize: size, deleteAt, retentionDays: config.upload.retentionDays, migratedFromLocalKey: doc.videoKey } }
   );
   if (result.modifiedCount !== 1) {
     await s3.deleteObject(key).catch(() => {});

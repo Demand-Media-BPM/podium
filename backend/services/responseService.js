@@ -15,12 +15,7 @@ const NOT_FOUND = () => new AppError(404, 'Not found', 'NOT_FOUND');
 
 const isDuplicateKeyError = (err) => Boolean(err && err.code === 11000);
 
-// The retention deadline. Phase 5 records always have deleteAt; this falls back to submittedAt + 180 days.
-function retentionDeadline(doc) {
-  if (doc.deleteAt) return new Date(doc.deleteAt);
-  if (doc.submittedAt) return new Date(new Date(doc.submittedAt).getTime() + config.upload.retentionDays * DAY_MS);
-  return null;
-}
+const { retentionDeadline } = require('./retentionPolicy');
 
 // 'expired' as soon as the deadline passes, even before the retention job has marked the record.
 function effectiveStatus(doc, now = new Date()) {
@@ -46,7 +41,7 @@ function serializeResponse(doc, now = new Date()) {
     mimeType: doc.mimeType || null,
     submittedAt: doc.submittedAt || null,
     createdAt: doc.createdAt,
-    deleteAt: doc.deleteAt || null,
+    deleteAt: retentionDeadline(doc),
     expiredAt: doc.expiredAt || null,
     storageProvider: provider,
     // Whether the Play/Download buttons should be enabled (the server re-checks on every request).
@@ -110,6 +105,7 @@ async function submitResponse({ request, file, fields }) {
       status: 'submitted',
       submittedAt: now,
       deleteAt: new Date(now.getTime() + config.upload.retentionDays * DAY_MS),
+      retentionDays: config.upload.retentionDays,
     });
     return { duplicate: false, response };
   } catch (err) {
@@ -231,7 +227,7 @@ async function authorizeVideoAccess(user, responseId, { s3, now = new Date() } =
   if (doc.status !== 'submitted' && doc.status !== 'expired') throw NOT_FOUND(); // pending / failed: not a video yet
   const deadline = retentionDeadline(doc);
   if (doc.status === 'expired' || (deadline && deadline <= now)) {
-    throw new AppError(410, 'This video has passed its 180-day retention period and has been removed.', 'VIDEO_EXPIRED');
+    throw new AppError(410, 'This video has passed its 60-day retention period and has been removed.', 'VIDEO_EXPIRED');
   }
 
   const provider = providerOf(doc);

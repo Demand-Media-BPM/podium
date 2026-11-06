@@ -26,7 +26,7 @@ function serializeRequest(doc, responseCount = 0, now = new Date()) {
 }
 
 // Counts received responses per request id: submitted ones plus those whose video has since expired (the record is
-// kept as submission history, so the count does not shrink after 180 days). Returns a Map(requestId -> count).
+// kept as submission history, so the count does not shrink after 60 days). Returns a Map(requestId -> count).
 async function countSubmittedResponses(requestIds) {
   if (requestIds.length === 0) return new Map();
   const groups = await Submission.aggregate([{ $match: {requestId: {$in: requestIds}} }, {$group: {_id: '$requestId', count: {$sum: 1}}}]);

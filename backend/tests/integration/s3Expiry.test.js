@@ -11,7 +11,7 @@ const { webmBytes } = require('../helpers/videoFixtures');
 const skip = hasMongo ? false : 'MONGODB_URI is not set - integration tests need a MongoDB connection';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-test('180-day retention (integration, fake S3)', { skip }, async (t) => {
+test('60-day retention (integration, fake S3)', { skip }, async (t) => {
   const ctx = await setupS3(t);
   const s3 = () => getS3Service();
   const submit = async () => {
@@ -27,7 +27,7 @@ test('180-day retention (integration, fake S3)', { skip }, async (t) => {
       const res = await ctx.client.get(`/api/responses/${a.id}/${action}`);
       assert.equal(res.status, 410, action);
       assert.equal(res.json.code, 'VIDEO_EXPIRED');
-      assert.match(res.json.message, /180-day/);
+      assert.match(res.json.message, /60-day/);
     }
     assert.ok(ctx.s3.objects.has(a.doc.videoKey), 'S3 has not removed it yet, but the app already refuses');
     const row = (await ctx.client.get(`/api/requests/${ctx.requestId}/responses`)).json.responses.find((r) => r.id === a.id);

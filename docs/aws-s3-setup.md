@@ -12,7 +12,7 @@ repository, in chat, or in any file that is committed.
 | Prefix       | Written by              | Purpose                                         | Lifecycle rule        |
 | ------------ | ----------------------- | ----------------------------------------------- | --------------------- |
 | `pending/`   | the client's browser    | A new upload, allowed for 5 minutes, one key    | deleted after 1 day   |
-| `responses/` | the server (a copy)     | A verified, submitted video                     | deleted after 180 days |
+| `responses/` | the server (a copy)     | A verified, submitted video                     | deleted after 60 days |
 
 1. The browser asks the API to start a submission. The API returns a **presigned POST** that is valid for **5 minutes**,
    for **one** object key under `pending/`, for **exactly** the declared size (never above 100 MiB), one content type, and
@@ -114,14 +114,14 @@ aws s3api put-bucket-cors --bucket YOUR-BUCKET-NAME --cors-configuration file://
 
 CORS is a browser rule, not a security boundary: the presigned policy and IAM are what protect the bucket.
 
-## 7. 180-day expiry (lifecycle rules)
+## 7. 60-day expiry (lifecycle rules)
 
 [`docs/aws/lifecycle.json`](aws/lifecycle.json) has two rules, each scoped to one prefix, so nothing else in the bucket
 is ever touched:
 
 | Rule                      | Prefix       | Action                     |
 | ------------------------- | ------------ | -------------------------- |
-| expire submitted videos   | `responses/` | delete after **180 days**  |
+| expire submitted videos   | `responses/` | delete after **60 days**  |
 | expire unfinished uploads | `pending/`   | delete after **1 day**     |
 
 Both also abort incomplete multipart uploads after 1 day. The application does not use multipart uploads today; the
@@ -134,12 +134,12 @@ aws s3api put-bucket-lifecycle-configuration --bucket YOUR-BUCKET-NAME --lifecyc
 **This replaces any existing lifecycle configuration on the bucket.** Check first with
 `aws s3api get-bucket-lifecycle-configuration --bucket YOUR-BUCKET-NAME` and merge rules if there are any.
 
-### How the 180 days are counted (the policy this application uses)
+### How the 60 days are counted (the policy this application uses)
 
 - S3 counts an object's age from **when that object was created in S3**. The application's `responses/` object is created
   when the server verifies and copies the upload, a few seconds after the client pressed Submit.
-- The application stores the retention deadline in MongoDB as `deleteAt` = **that S3 object's creation time + 180 days**,
-  set once when the response becomes `submitted` and never changed afterwards. The deadline the app enforces and the
+- The application stores the retention deadline in MongoDB as `deleteAt` = **that S3 object's creation time + 60 days**,
+  set when the response becomes `submitted`. Old 180-day records are shortened once on startup, as described in [the retention policy](retention-policy.md). The deadline the app enforces and the
   deadline S3 enforces therefore start from the same clock. (`submittedAt` is a few seconds earlier and is not used for
   retention.)
 - S3 lifecycle expiry is **asynchronous**: eligible objects are queued for removal, which can take a day or more, and S3
@@ -152,11 +152,11 @@ aws s3api put-bucket-lifecycle-configuration --bucket YOUR-BUCKET-NAME --lifecyc
 Keep **Versioning disabled** on this dedicated bucket. With versioning on, an expiration only adds a delete marker; the old
 video version remains (and is billed) until a noncurrent-version rule removes it. If a company policy forces versioning on,
 add a `NoncurrentVersionExpiration` of 1 day to both rules and a separate rule with `ExpiredObjectDeleteMarker: true`
-(it cannot be combined with `Days` in the same `Expiration`), or videos will outlive 180 days.
+(it cannot be combined with `Days` in the same `Expiration`), or videos will outlive 60 days.
 
 ### Backups, replication and complete removal
 
-The 180-day rule removes the object from **this bucket only**. Anything that copied the video earlier is unaffected: S3
+The 60-day rule removes the object from **this bucket only**. Anything that copied the video earlier is unaffected: S3
 replication, AWS Backup, inventory exports, employee downloads and local copies. MongoDB Atlas backups hold only names,
 emails and dates, not video. If you must prove complete removal, do not enable replication or backups for this bucket, or
 give those copies their own expiry. The application keeps minimal submission history (name, email, dates, size) after the
@@ -197,7 +197,7 @@ AWS_REGION=YOUR-REGION
 AWS_S3_BUCKET=YOUR-BUCKET-NAME
 AWS_ACCESS_KEY_ID=          # empty: use a profile (laptop) or the instance role (EC2)
 AWS_SECRET_ACCESS_KEY=      # empty: same
-RETENTION_JOB=on            # in-process 180-day cleanup every 6 hours; "off" to run `npm run retention` from cron
+RETENTION_JOB=on            # in-process 60-day cleanup every 6 hours; "off" to run `npm run retention` from cron
 ```
 
 ## 10. Test uploads and downloads
@@ -213,7 +213,7 @@ Do this with a **test request**, not a real client link.
    is empty. Open the object's properties and confirm **Server-side encryption: SSE-S3**.
 5. Back in the dashboard, open the request and press **Play Video**, then **Download Video**. The downloaded file name
    looks like `response-<name>-<date>-<id>.webm`.
-6. Check MongoDB: the response has `status: "submitted"`, `storageProvider: "s3"` and a `deleteAt` 180 days ahead.
+6. Check MongoDB: the response has `status: "submitted"`, `storageProvider: "s3"` and a `deleteAt` 60 days ahead.
 
 If the upload fails in the browser with a network or CORS error, check step 6 (CORS) and that the page's origin is
 exactly the one in `cors.json`.
@@ -246,7 +246,7 @@ At 5-10 videos a month, cost is small. A 2-minute 720p browser recording is typi
 
 | Item (US East pricing, check your region)        | Rough monthly figure                        |
 | ------------------------------------------------ | ------------------------------------------- |
-| Storage: 10 videos x 35 MB, kept 180 days (~60)  | ~2.1 GB x ~$0.023/GB = **about $0.05**      |
+| Storage: 10 videos x 35 MB, kept 60 days (~20 videos)  | ~0.7 GB x ~$0.023/GB = **about $0.02**      |
 | Requests (uploads, copies, plays)                | well under **$0.01**                         |
 | Data out to the internet (downloads/plays)       | first 100 GB/month free; effectively **$0**  |
 
@@ -278,7 +278,7 @@ node scripts/migrateLocalVideos.js --cleanup   # type DELETE: removes local copi
 ```
 
 The migration needs `STORAGE_PROVIDER=s3` and working AWS settings, keeps the local files, only changes a record after
-the S3 copy is verified, and sets a fresh 180-day `deleteAt` from the S3 object's creation time. Run the report first,
+the S3 copy is verified, and sets a fresh 60-day `deleteAt` from the S3 object's creation time. Run the report first,
 check that the migrated videos play, and only then run `--cleanup`. If you do not care about the test recordings, you can
 simply delete the `backend/storage/` folder and the test requests yourself.
 

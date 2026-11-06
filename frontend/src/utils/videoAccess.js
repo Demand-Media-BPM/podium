@@ -1,14 +1,14 @@
 import { getApiError } from './format.js';
 
 // Turns a failed play/download request into { message, code } for the employee.
-// 410 = the video is gone (expired by the 180-day policy, or the file is missing) and retrying will not help.
+// 410 = the video is gone (expired by the 60-day policy, or the file is missing) and retrying will not help.
 export function describeVideoAccessError(error) {
   const data = error?.response?.data || {};
   const status = error?.response?.status;
   const code = data.code || '';
 
   if (code === 'VIDEO_EXPIRED') {
-    return { code, message: 'This video has passed its 180-day retention period and has been removed. Only the submission details are kept.' };
+    return { code, message: 'This video has passed its 60-day retention period and has been removed. Only the submission details are kept.' };
   }
   if (code === 'VIDEO_MISSING') {
     return { code, message: 'The video file is no longer available.' };

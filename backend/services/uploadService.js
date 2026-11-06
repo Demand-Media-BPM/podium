@@ -202,6 +202,7 @@ async function completeUpload({ request, responseId, credential, s3 = getS3Servi
         fileSize: promoted.size,
         submittedAt: now,
         deleteAt,
+        retentionDays: config.upload.retentionDays,
       },
       // uploadTokenHash stays (a hash only): it lets a repeated completion call be authenticated and confirmed.
       $unset: { uploadKey: 1, uploadIssuedAt: 1, failureReason: 1 },

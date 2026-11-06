@@ -37,7 +37,7 @@ POST /api/public/:token/submissions receives {batchId, batchToken, answers: [res
 
 An immutable Submission record publishes the selected response IDs together. Before it exists, videos are excluded from employee lists, counts, playback and download. Extra attempts not selected for the final submission stay hidden. Counts on request/dashboard pages count complete questionnaires, and the response list paginates complete submissions (five per UI page), keeping all question videos together. Original single-question records retain their legacy flow.
 
-Duration remains browser-reported, as in the original app; container signature validation does not decode or independently time videos. The existing 180-day video retention and private S3 settings remain in effect.
+Duration remains browser-reported, as in the original app; container signature validation does not decode or independently time videos. The existing 60-day video retention and private S3 settings remain in effect.
 
 ## Playback and ZIP download
 

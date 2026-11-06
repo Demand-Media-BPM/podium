@@ -4,6 +4,7 @@ const { providerOf } = require('../utils/provider');
 const { isFinalKey, isPendingKey } = require('./objectKeys');
 const { acquireLock, releaseLock } = require('./jobLock');
 const videoStore = require('./videoStore');
+const { alignStoredRetention } = require('./retentionPolicy');
 
 // Keeps MongoDB in step with S3's lifecycle rules. S3 deletes the objects (asynchronously, so possibly a day or more
 // after the deadline); this job makes the records say so and removes the storage references.
@@ -34,6 +35,7 @@ async function removeStoredVideo(doc, s3) {
 }
 
 async function expireDueResponses({ s3, now }) {
+  await alignStoredRetention();
   let expired = 0;
   let objectsLeft = 0;
   for (;;) {

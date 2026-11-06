@@ -15,7 +15,7 @@ const DEFAULT_UPLOAD_DIR = 'storage/uploads';
 // Long question answers may be up to 2 GiB. Empty or near-empty files are refused.
 const MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024;
 const MIN_UPLOAD_BYTES = 1024;
-const RESPONSE_RETENTION_DAYS = 180;
+const RESPONSE_RETENTION_DAYS = 60;
 
 const STORAGE_PROVIDERS = ['s3', 'local'];
 const HOUR_MS = 60 * 60 * 1000;
@@ -82,7 +82,7 @@ function buildConfig(env) {
       hasAccessKeyId: Boolean(env.AWS_ACCESS_KEY_ID),
       hasSecretAccessKey: Boolean(env.AWS_SECRET_ACCESS_KEY),
       pendingPrefix: 'pending/', // browser uploads land here; lifecycle deletes leftovers after 1 day
-      finalPrefix: 'responses/', // verified videos live here; lifecycle expires them after 180 days
+      finalPrefix: 'responses/', // verified videos live here; lifecycle expires them after 60 days
       uploadExpiresSeconds: 300, // presigned upload authorization lifetime
       playbackExpiresSeconds: 60, // presigned playback URL lifetime
       downloadExpiresSeconds: 60,

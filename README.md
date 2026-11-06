@@ -4,7 +4,7 @@ Employees create a questionnaire, choose a microsite theme, and share a short cl
 
 **Current multi-question behavior, API, theme files, compatibility and test commands:** [docs/multi-question-flow.md](docs/multi-question-flow.md).
 
-Videos use private AWS S3 by default, with verified direct browser uploads, short-lived employee playback/download links, and 180-day retention. Local storage remains available for development only. New recordings allow up to 2 GiB per video. Existing single-question requests and long links continue to work.
+Videos use private AWS S3 by default, with verified direct browser uploads, short-lived employee playback/download links, and 60-day retention. Local storage remains available for development only. New recordings allow up to 2 GiB per video. Existing single-question requests and long links continue to work.
 
 The phase-by-phase sections below document the original single-question implementation; the multi-question guide above describes the current extensions and updated limits.
 
@@ -78,7 +78,7 @@ cd ../frontend && npm install && cp .env.example .env
 | `STORAGE_PROVIDER` | no   | `s3` (default; the only value allowed when `NODE_ENV=production`) or `local` (development only). Not setting it means `s3`, so a forgotten setting can never use local files |
 | `AWS_REGION`, `AWS_S3_BUCKET` | when `s3` | Region and name of your private bucket. See [docs/aws-s3-setup.md](docs/aws-s3-setup.md) |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | no | Leave **both empty** to use the AWS credential chain: an AWS profile on your laptop, the IAM instance role on EC2 (recommended; no keys on the server). Set both or neither |
-| `RETENTION_JOB` | no      | `on` (default) runs the 180-day cleanup inside the server every 6 hours; `off` if you run `npm run retention` from a scheduler |
+| `RETENTION_JOB` | no      | `on` (default) runs the 60-day cleanup inside the server every 6 hours; `off` if you run `npm run retention` from a scheduler |
 
 The server refuses to start (and says which variable is wrong, never its value) if a required variable is missing or invalid.
 
@@ -194,7 +194,7 @@ Database `video_response_tool`, all collections with `createdAt`/`updatedAt` tim
 - **responses**: `requestId` -> requests, `submissionId` (client UUID; unique together with `requestId`, makes retries idempotent), `clientName`, `clientEmail`, `videoKey` (the final S3 key `responses/<requestId>/<uuid>.<ext>`; hidden from queries), `storageProvider` (`s3`/`local`; Phase 4 records have the older field `storage` instead and are read through either), `mimeType`, `fileSize`, `durationSeconds`, `consentAccepted`, `status` (`pending_upload`/`submitted`/`expired`/`failed`), `submittedAt`, `deleteAt` (retention deadline), `expiredAt`, `failureReason`. Hidden upload-handshake fields: `uploadKey` (`pending/...`), `uploadTokenHash` (SHA-256 of the completion token), `uploadIssuedAt`, `migratedFromLocalKey`
 - **joblocks**: one tiny lease document per scheduled job, so only one server instance runs it at a time
 
-`responses.deleteAt` is a plain date for a future cleanup job that deletes the S3 video after 180 days. It is deliberately **not** a TTL index, so the response record is kept as submission history.
+`responses.deleteAt` is a plain date for a future cleanup job that deletes the S3 video after 60 days. It is deliberately **not** a TTL index, so the response record is kept as submission history.
 
 ```bash
 cd backend
@@ -256,7 +256,7 @@ Employees can only see and change their own requests; admins can manage all. Ano
 3. `multer` streams the one `video` file to a randomly named temporary file (never to memory). The client's file name is ignored. More than one file, a file in another field, or a body over 100 MiB (104,857,600 bytes) is refused and the partial file deleted.
 4. Name (max 100), email (valid, max 254), consent (exactly `true`), duration and the submission id are validated. Unknown fields are rejected.
 5. The file type is decided from the **file's own bytes** (WebM/EBML or MP4 `ftyp` signature), never from its name or the `Content-Type` the client sent. Anything else is rejected with 415. This checks the container signature only; it does not prove the file is a playable video.
-6. The request is checked again (it could have been closed during a long upload), the file is moved to `<UPLOAD_DIR>/<requestId>/<random-uuid>.<webm|mp4>`, and **only then** is the response saved as `submitted` with `deleteAt` = 180 days later. If saving fails, the file is deleted again, so no orphan is left. Temporary files are removed on every outcome, and leftover partial uploads older than an hour are cleaned up at startup.
+6. The request is checked again (it could have been closed during a long upload), the file is moved to `<UPLOAD_DIR>/<requestId>/<random-uuid>.<webm|mp4>`, and **only then** is the response saved as `submitted` with `deleteAt` = 60 days later. If saving fails, the file is deleted again, so no orphan is left. Temporary files are removed on every outcome, and leftover partial uploads older than an hour are cleaned up at startup.
 
 `durationSeconds` is what the browser reports. The server cannot measure a video without decoding it, so it is validated (positive, at most 120 s plus 2 s tolerance) and stored for display only; it is not a security control.
 
@@ -304,10 +304,10 @@ pending, failed and expired responses, check that the object really exists in S3
 a name taken from the client's file. The responses are sent with `Cache-Control: private, no-store`. The URL only has to be valid
 when playback *starts*; a video already playing is not interrupted. The bucket never serves anything without a signature.
 
-### 180-day retention
+### 60-day retention
 
-- `deleteAt` = the S3 object's creation time + 180 days, set once when the response becomes `submitted` and never changed.
-- An S3 **lifecycle rule** deletes `responses/` objects after 180 days and `pending/` objects after 1 day (rules are in
+- `deleteAt` = the S3 object's creation time + 60 days, set when the response becomes `submitted`. Existing 180-day records are shortened once to the 60-day policy on startup; the original storage clock is preserved.
+- An S3 **lifecycle rule** deletes `responses/` objects after 60 days and `pending/` objects after 1 day (rules are in
   [docs/aws/lifecycle.json](docs/aws/lifecycle.json); you apply them, the application never changes AWS settings).
 - S3 expiry is **asynchronous** (can lag by a day or more). The **application refuses playback and download from `deleteAt`**
   whether or not S3 has deleted the file, and the table shows such a video as **Expired** immediately.

@@ -72,12 +72,12 @@ test('S3 submission: the happy path (integration, fake S3)', { skip }, async (t)
     assert.ok(!ctx.s3.keys().some((k) => k.startsWith('pending/')), 'the pending copy was removed');
   });
 
-  await t.test('the retention deadline is the S3 object time + 180 days', async () => {
+  await t.test('the retention deadline is the S3 object time + 60 days', async () => {
     const doc = await Response.findById(flow.started.json.responseId).select('+videoKey').lean();
     // S3 (and HTTP) report LastModified with whole-second precision, and the app uses what S3 reports.
     const objectTime = Math.floor(ctx.s3.objects.get(doc.videoKey).lastModified.getTime() / 1000) * 1000;
-    assert.equal(doc.deleteAt.getTime(), objectTime + 180 * DAY_MS);
-    assert.ok(Math.abs(doc.deleteAt - doc.submittedAt - 180 * DAY_MS) < 60_000, 'and so ~180 days after submission');
+    assert.equal(doc.deleteAt.getTime(), objectTime + 60 * DAY_MS);
+    assert.ok(Math.abs(doc.deleteAt - doc.submittedAt - 60 * DAY_MS) < 60_000, 'and so ~60 days after submission');
   });
 
   await t.test('the submitted response shows up for the employee, with no storage details', async () => {

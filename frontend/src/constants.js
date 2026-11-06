@@ -10,5 +10,5 @@ export const NAME_MAX = 100;
 export const EMAIL_MAX = 254;
 export const CONSENT_TEXT = 'I agree to have my video recorded and shared publicly for promotional purposes.';
 // How long videos are kept (S3 lifecycle rule + the app's own deadline). Shown to clients and employees.
-export const RETENTION_DAYS = 180;
+export const RETENTION_DAYS = 60;
 export const APP_NAME = 'PODIUM';

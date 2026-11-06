@@ -5,6 +5,7 @@ const createApp = require('./app');
 const videoStore = require('./services/videoStore');
 const { startRetentionSchedule } = require('./services/retentionService');
 const { getS3Service } = require('./services/s3Service');
+const { alignStoredRetention } = require('./services/retentionPolicy');
 
 async function start() {
   // 1. Fail fast on missing/invalid configuration (names only, never values).
@@ -12,6 +13,8 @@ async function start() {
 
   // 2. Connect to MongoDB Atlas BEFORE the API starts accepting requests.
   await connectDB();
+  const aligned = await alignStoredRetention();
+  if (aligned) console.log('Aligned ' + aligned + ' video retention deadline(s) to ' + config.upload.retentionDays + ' days');
 
   // 3. Storage. S3 is the default and the only option in production. Local storage is a development convenience:
   //    prepare its folder and drop partial uploads left by a crash.
@@ -29,7 +32,7 @@ async function start() {
     console.log(`Video Response API listening on port ${config.port} (${config.nodeEnv})`);
   });
 
-  // 5. Scheduled retention job (expires records past their 180-day deadline). Uses a MongoDB lock, so running
+  // 5. Scheduled retention job (expires records past their 60-day deadline). Uses a MongoDB lock, so running
   //    several instances is safe.
   const retention = startRetentionSchedule({
     getS3: () => (config.storage.provider === 's3' ? getS3Service() : null),
