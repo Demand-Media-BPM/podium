@@ -10,17 +10,17 @@ const skip = hasMongo ? false : 'MONGODB_URI is not set - integration tests need
 test('employee access to responses: listing and counts (integration)', { skip }, async (t) => {
   const { alice, bob, admin, anon, aliceRequest, bobRequest, emptyRequest, listOf } = await setupAccess(t);
 
-  await t.test('an employee sees the responses of their own request, newest first', async () => {
+  await t.test('an employee sees the responses of their own request, oldest first', async () => {
     const res = await listOf(alice.client, aliceRequest);
     assert.equal(res.status, 200);
-    assert.deepEqual(res.json.responses.map((r) => r.clientName), ['Second', 'First']);
+    assert.deepEqual(res.json.responses.map((r) => r.clientName), ['First', 'Second']);
     assert.equal(res.json.pagination.total, 2);
     const [row] = res.json.responses;
     assert.deepEqual(
       Object.keys(row).sort(),
       ['clientEmail', 'clientName', 'createdAt', 'deleteAt', 'durationSeconds', 'effectiveStatus', 'expiredAt', 'fileSize', 'id', 'mimeType', 'playable', 'status', 'storageProvider', 'submittedAt']
     );
-    assert.equal(row.clientEmail, 'second@example.com');
+    assert.equal(row.clientEmail, 'first@example.com');
     assert.equal(row.status, 'submitted');
     assert.equal(row.durationSeconds, 42.5);
   });
@@ -59,7 +59,7 @@ test('employee access to responses: listing and counts (integration)', { skip },
   await t.test('pagination works and bad values are rejected', async () => {
     const page = await alice.client.get(`/api/requests/${aliceRequest.id}/responses?limit=1&page=2`);
     assert.equal(page.json.responses.length, 1);
-    assert.equal(page.json.responses[0].clientName, 'First');
+    assert.equal(page.json.responses[0].clientName, 'Second');
     assert.equal((await alice.client.get(`/api/requests/${aliceRequest.id}/responses?limit=500`)).status, 400);
   });
 

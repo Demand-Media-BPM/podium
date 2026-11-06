@@ -137,20 +137,54 @@ async function findOwnedRequest(user, requestId) {
 // bookkeeping for the upload handshake and are never listed.
 const VISIBLE_STATUSES = ['submitted', 'expired'];
 
+// Paginate completed questionnaires, not their individual videos. Legacy answers are single-video submissions.
 async function listResponses(user, requestId, { page, limit }) {
   const request = await findOwnedRequest(user, requestId);
-  const groups = await Submission.find({requestId: request._id});
-  const completed = groups.flatMap(g => g.responseIds);
-  const filter = { requestId: request._id, status: { $in: VISIBLE_STATUSES }, $or: [{batchId: {$exists: false}}, {_id: {$in: completed}}] };
-  const [total, docs] = await Promise.all([
-    Response.countDocuments(filter),
-    Response.find(filter)
-      .sort({ submittedAt: -1, createdAt: -1, _id: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit),
+  const offset = (page - 1) * limit;
+  const [result] = await Submission.aggregate([
+    { $match: { requestId: request._id } },
+    { $project: { batchId: 1, responseIds: 1, submittedAt: '$createdAt' } },
+    { $unionWith: {
+      coll: Response.collection.name,
+      pipeline: [
+        { $match: { requestId: request._id, status: { $in: VISIBLE_STATUSES }, batchId: { $exists: false } } },
+        { $project: { batchId: { $literal: null }, responseIds: ['$_id'], submittedAt: { $ifNull: ['$submittedAt', '$createdAt'] } } },
+      ],
+    } },
+    { $facet: {
+      metadata: [{ $count: 'total' }],
+      items: [{ $sort: { submittedAt: 1, _id: 1 } }, { $skip: offset }, { $limit: limit }],
+    } },
   ]);
+  const total = result.metadata[0]?.total || 0;
+  const selected = result.items;
+  const docs = await Response.find({
+    _id: { $in: selected.flatMap(group => group.responseIds) },
+    requestId: request._id,
+    status: { $in: VISIBLE_STATUSES },
+  });
+  const now = new Date();
+  const byId = new Map(docs.map(doc => [String(doc._id), serializeResponse(doc, now)]));
+  const submissions = selected.map((group, index) => {
+    // Submission.responseIds captures the original question order, even if the request is edited later.
+    const responses = group.responseIds.map(id => byId.get(String(id))).filter(Boolean);
+    const first = responses[0];
+    return {
+      id: String(group._id),
+      batchId: group.batchId || null,
+      number: offset + index + 1,
+      clientName: first?.clientName || '',
+      clientEmail: first?.clientEmail || '',
+      submittedAt: group.submittedAt,
+      videoCount: group.responseIds.length,
+      downloadable: Boolean(group.batchId) && responses.length === group.responseIds.length && responses.every(response => response.playable),
+      responses,
+    };
+  });
   return {
-    responses: docs.map((doc) => serializeResponse(doc)),
+    submissions,
+    // Retain the flat array for existing API consumers; it contains every video in the selected complete groups.
+    responses: submissions.flatMap(group => group.responses),
     pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
   };
 }
